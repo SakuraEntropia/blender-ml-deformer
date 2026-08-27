@@ -1,9 +1,9 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 bl_info = {
-    "name": "PoseDeformer",
-    "author": "PoseDeformer contributors",
+    "name": "Blender ML Deformer",
+    "author": "Blender ML Deformer contributors",
     "version": (0, 1, 0),
     "blender": (4, 0, 0),
     "location": "3D Viewport > Sidebar (N) > Pose Deformer",
@@ -23,7 +23,7 @@ except ModuleNotFoundError:
     classes = ()
 
     def register():
-        raise RuntimeError("PoseDeformer requires Blender (bpy)")
+        raise RuntimeError("Blender ML Deformer requires Blender (bpy)")
 
     def unregister():
         pass

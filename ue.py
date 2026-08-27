@@ -1,4 +1,4 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 """Engine-format bridge: import/export of the neural morph network exchange
@@ -102,7 +102,7 @@ def import_nmn(settings, path):
         data = f.read()
     model = parse_nmn(data)
     if model.is_local_mode:
-        print("[PoseDeformer] warning: local-mode networks are imported but "
+        print("[Blender ML Deformer] warning: local-mode networks are imported but "
               "can only run their main network; groups are ignored")
     spec, morph_names = _mapping_spec(settings, model.num_bones,
                                       model.num_curves, model.num_morphs)
@@ -174,7 +174,7 @@ def export_nmn_iter(settings, path):
     serializes it.  Yields progress 0..1."""
     if bridge.ACTIVE_KIND != "neural" or not isinstance(
             bridge.ACTIVE_MODEL, NeuralMorphRegressor):
-        raise ValueError("export requires a Neural model trained in PoseDeformer")
+        raise ValueError("export requires a Neural model trained in Blender ML Deformer")
     cache = bridge.TRAINING_CACHE
     if cache is None:
         raise ValueError("the training cache is gone; regenerate training data "
@@ -227,7 +227,7 @@ def export_nmn_iter(settings, path):
         "input_mean": nmn.input_mean.tolist(),
         "input_std": nmn.input_std.tolist(),
     }
-    side_path = os.path.splitext(path)[0] + ".psd_ue.json"
+    side_path = os.path.splitext(path)[0] + ".bmd_ue.json"
     with open(side_path, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2)
     yield 1.0

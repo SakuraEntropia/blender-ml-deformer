@@ -1,4 +1,4 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 """Blender-bound primitives: pose/mesh evaluation, shape keys, preview proxy,
@@ -35,7 +35,7 @@ _LAST_REFRESH_TIME = 0.0
 _REFRESH_INTERVAL = 0.1
 _REFRESHING = False
 
-BAKE_KEY_PREFIX = "PSD_"
+BAKE_KEY_PREFIX = "BMD_"
 
 
 def clear_runtime():
@@ -57,7 +57,7 @@ def get_depsgraph():
 def get_settings(scene=None):
     if scene is None:
         scene = bpy.context.scene
-    return scene.psd
+    return scene.bmd
 
 
 # ---------------------------------------------------------------------------
@@ -369,7 +369,7 @@ def uses_posed_base():
 # ---------------------------------------------------------------------------
 
 def create_preview_proxy(context):
-    settings = context.scene.psd
+    settings = context.scene.bmd
     src = settings.mesh
     if src is None:
         raise ValueError("Pick a Mesh in the Setup section first")
@@ -385,14 +385,14 @@ def create_preview_proxy(context):
     finally:
         src_eval.to_mesh_clear()
     if new_me is None or len(new_me.vertices) != len(base):
-        new_me = bpy.data.meshes.new(src.name + "_PSDPreview")
+        new_me = bpy.data.meshes.new(src.name + "_BMDPreview")
         new_me.vertices.add(len(base))
     if new_me.shape_keys is not None:
         bpy.data.shape_keys.remove(new_me.shape_keys, do_unlink=True)
-    new_me.name = src.name + "_PSDPreview"
+    new_me.name = src.name + "_BMDPreview"
     new_me.vertices.foreach_set("co", base.ravel())
     new_me.update()
-    obj = bpy.data.objects.new(src.name + "_PSDPreview", new_me)
+    obj = bpy.data.objects.new(src.name + "_BMDPreview", new_me)
     context.scene.collection.objects.link(obj)
     settings.preview_object = obj
     refresh_preview(context.scene, force=True)
@@ -401,7 +401,7 @@ def create_preview_proxy(context):
 
 def refresh_preview(scene, force=False):
     global _LAST_REFRESH_TIME, _REFRESHING
-    settings = scene.psd
+    settings = scene.bmd
     if ACTIVE_MODEL is None or ACTIVE_INPUT is None:
         return
     if _REFRESHING:
@@ -440,12 +440,12 @@ def _try_refresh(scene, force=False):
     try:
         refresh_preview(scene, force=force)
     except Exception as exc:
-        print("[PoseDeformer] preview refresh failed:", exc)
+        print("[Blender ML Deformer] preview refresh failed:", exc)
 
 
 @bpy.app.handlers.persistent
 def _depsgraph_handler(scene, depsgraph):
-    if scene.psd.auto_refresh:
+    if scene.bmd.auto_refresh:
         _try_refresh(scene)
 
 
@@ -461,14 +461,14 @@ def _load_handler(_unused):
         scene = bpy.context.scene
         if scene is None:
             return
-        settings = scene.psd
+        settings = scene.bmd
         if settings.is_trained and settings.model_dir:
             from .train import import_model
             if os.path.isfile(os.path.join(settings.model_dir, "pose_model.json")):
                 import_model(settings)
-                print("[PoseDeformer] re-imported model from %s" % settings.model_dir)
+                print("[Blender ML Deformer] re-imported model from %s" % settings.model_dir)
     except Exception as exc:
-        print("[PoseDeformer] auto-import failed:", exc)
+        print("[Blender ML Deformer] auto-import failed:", exc)
 
 
 def register_handlers():

@@ -1,4 +1,4 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 """Sidebar UI (3D viewport, N key, "Pose Deformer" tab)."""
@@ -6,8 +6,8 @@
 import bpy
 
 
-class PSD_UL_bones(bpy.types.UIList):
-    bl_idname = "PSD_UL_bones"
+class BMD_UL_bones(bpy.types.UIList):
+    bl_idname = "BMD_UL_bones"
 
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -16,8 +16,8 @@ class PSD_UL_bones(bpy.types.UIList):
             layout.label(text=item.name, icon="BONE_DATA")
 
 
-class PSD_UL_keys(bpy.types.UIList):
-    bl_idname = "PSD_UL_keys"
+class BMD_UL_keys(bpy.types.UIList):
+    bl_idname = "BMD_UL_keys"
 
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -26,8 +26,8 @@ class PSD_UL_keys(bpy.types.UIList):
             layout.label(text=item.name, icon="SHAPEKEY_DATA")
 
 
-class PSD_UL_clips(bpy.types.UIList):
-    bl_idname = "PSD_UL_clips"
+class BMD_UL_clips(bpy.types.UIList):
+    bl_idname = "BMD_UL_clips"
 
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -36,9 +36,9 @@ class PSD_UL_clips(bpy.types.UIList):
             layout.label(text=item.name, icon="ACTION")
 
 
-class PSD_PT_main(bpy.types.Panel):
+class BMD_PT_main(bpy.types.Panel):
     bl_label = "Pose Deformer"
-    bl_idname = "PSD_PT_main"
+    bl_idname = "BMD_PT_main"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Pose Deformer"
@@ -47,16 +47,16 @@ class PSD_PT_main(bpy.types.Panel):
         pass
 
 
-class PSD_PT_setup(bpy.types.Panel):
+class BMD_PT_setup(bpy.types.Panel):
     bl_label = "Setup"
-    bl_parent_id = "PSD_PT_main"
+    bl_parent_id = "BMD_PT_main"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
-        settings = context.scene.psd
+        settings = context.scene.bmd
         col = layout.column(align=True)
         col.prop(settings, "armature")
         col.prop(settings, "mesh")
@@ -64,23 +64,23 @@ class PSD_PT_setup(bpy.types.Panel):
         layout.prop(settings, "model_kind")
 
 
-class PSD_PT_inputs(bpy.types.Panel):
+class BMD_PT_inputs(bpy.types.Panel):
     bl_label = "Inputs"
-    bl_parent_id = "PSD_PT_main"
+    bl_parent_id = "BMD_PT_main"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
 
     def draw(self, context):
         layout = self.layout
-        settings = context.scene.psd
+        settings = context.scene.bmd
 
         box = layout.box()
         box.label(text="Bones", icon="BONE_DATA")
-        box.template_list("PSD_UL_bones", "", settings, "bones",
+        box.template_list("BMD_UL_bones", "", settings, "bones",
                           settings, "active_bone_index", rows=4)
         row = box.row(align=True)
-        row.operator("psd.sync_bones", icon="IMPORT")
-        row.operator("psd.bones_remove", icon="X")
+        row.operator("bmd.sync_bones", icon="IMPORT")
+        row.operator("bmd.bones_remove", icon="X")
         idx = settings.active_bone_index
         if 0 <= idx < len(settings.bones):
             bone = settings.bones[idx]
@@ -101,43 +101,43 @@ class PSD_PT_inputs(bpy.types.Panel):
 
         box = layout.box()
         box.label(text="Curve Inputs (Shape Keys)", icon="SHAPEKEY_DATA")
-        box.template_list("PSD_UL_keys", "", settings, "curve_inputs",
+        box.template_list("BMD_UL_keys", "", settings, "curve_inputs",
                           settings, "active_curve_index", rows=3)
         row = box.row(align=True)
-        row.operator("psd.sync_curve_inputs", icon="IMPORT")
-        row.operator("psd.key_remove", icon="X").target = "CURVE"
+        row.operator("bmd.sync_curve_inputs", icon="IMPORT")
+        row.operator("bmd.key_remove", icon="X").target = "CURVE"
 
         box = layout.box()
         box.label(text="Morph Targets (Neural)", icon="SHAPEKEY_DATA")
-        box.template_list("PSD_UL_keys", "", settings, "morph_targets",
+        box.template_list("BMD_UL_keys", "", settings, "morph_targets",
                           settings, "active_morph_index", rows=3)
         row = box.row(align=True)
-        row.operator("psd.sync_morph_targets", icon="IMPORT")
-        row.operator("psd.key_remove", icon="X").target = "MORPH"
+        row.operator("bmd.sync_morph_targets", icon="IMPORT")
+        row.operator("bmd.key_remove", icon="X").target = "MORPH"
 
 
-class PSD_PT_training(bpy.types.Panel):
+class BMD_PT_training(bpy.types.Panel):
     bl_label = "Training"
-    bl_parent_id = "PSD_PT_main"
+    bl_parent_id = "BMD_PT_main"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
-        settings = context.scene.psd
+        settings = context.scene.bmd
         col = layout.column(align=True)
         col.prop(settings, "num_random_poses")
         col.prop(settings, "random_seed")
         layout.prop(settings, "use_clip_sampling")
         if settings.use_clip_sampling:
             box = layout.box()
-            box.template_list("PSD_UL_clips", "", settings, "training_clips",
+            box.template_list("BMD_UL_clips", "", settings, "training_clips",
                               settings, "active_clip_index", rows=3)
             row = box.row(align=True)
-            row.operator("psd.clip_add", icon="ADD", text="Add")
-            row.operator("psd.clip_add_all", icon="IMPORT")
-            row.operator("psd.clip_remove", icon="X")
+            row.operator("bmd.clip_add", icon="ADD", text="Add")
+            row.operator("bmd.clip_add_all", icon="IMPORT")
+            row.operator("bmd.clip_remove", icon="X")
             idx = settings.active_clip_index
             if 0 <= idx < len(settings.training_clips):
                 clip = settings.training_clips[idx]
@@ -149,19 +149,19 @@ class PSD_PT_training(bpy.types.Panel):
         if settings.model_kind == "NEURAL":
             layout.prop(settings, "morph_zero_prob")
         layout.separator()
-        layout.operator("psd.generate_training_data", icon="PLAY")
+        layout.operator("bmd.generate_training_data", icon="PLAY")
 
 
-class PSD_PT_model(bpy.types.Panel):
+class BMD_PT_model(bpy.types.Panel):
     bl_label = "Model"
-    bl_parent_id = "PSD_PT_main"
+    bl_parent_id = "BMD_PT_main"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
-        settings = context.scene.psd
+        settings = context.scene.bmd
 
         box = layout.box()
         box.label(text="Input Weights")
@@ -182,7 +182,7 @@ class PSD_PT_model(bpy.types.Panel):
             layout.prop(settings, "clamp_morph_weights")
 
         layout.separator()
-        layout.operator("psd.train", icon="PLAY")
+        layout.operator("bmd.train", icon="PLAY")
 
         if settings.is_trained:
             box = layout.box()
@@ -195,26 +195,26 @@ class PSD_PT_model(bpy.types.Panel):
             col.label(text="Max Vertex Error: %.4f" % settings.max_vertex_error)
 
 
-class PSD_PT_preview(bpy.types.Panel):
+class BMD_PT_preview(bpy.types.Panel):
     bl_label = "Preview & IO"
-    bl_parent_id = "PSD_PT_main"
+    bl_parent_id = "BMD_PT_main"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
-        settings = context.scene.psd
+        settings = context.scene.bmd
 
         layout.prop(settings, "auto_refresh")
         col = layout.column(align=True)
-        col.operator("psd.create_preview_proxy", icon="MESH_DATA")
-        col.operator("psd.refresh_preview", icon="FILE_REFRESH")
+        col.operator("bmd.create_preview_proxy", icon="MESH_DATA")
+        col.operator("bmd.refresh_preview", icon="FILE_REFRESH")
 
         layout.separator()
         col = layout.column(align=True)
         col.prop(settings, "num_bake_poses")
-        col.operator("psd.bake_shape_keys", icon="SHAPEKEY_DATA")
+        col.operator("bmd.bake_shape_keys", icon="SHAPEKEY_DATA")
 
         layout.separator()
         box = layout.box()
@@ -222,28 +222,28 @@ class PSD_PT_preview(bpy.types.Panel):
         box.prop(settings, "model_dir")
         box.prop(settings, "model_name")
         row = box.row(align=True)
-        row.operator("psd.export_model", icon="EXPORT")
-        row.operator("psd.import_model", icon="IMPORT")
+        row.operator("bmd.export_model", icon="EXPORT")
+        row.operator("bmd.import_model", icon="IMPORT")
 
         layout.separator()
-        layout.operator("psd.clear", icon="TRASH")
+        layout.operator("bmd.clear", icon="TRASH")
 
 
-class PSD_PT_engine(bpy.types.Panel):
+class BMD_PT_engine(bpy.types.Panel):
     bl_label = "Engine Bridge"
-    bl_parent_id = "PSD_PT_main"
+    bl_parent_id = "BMD_PT_main"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
-        settings = context.scene.psd
+        settings = context.scene.bmd
 
         box = layout.box()
         box.label(text="Import", icon="IMPORT")
-        box.operator("psd.import_engine_nmn")
-        box.operator("psd.import_engine_onnx")
+        box.operator("bmd.import_engine_nmn")
+        box.operator("bmd.import_engine_onnx")
         box.prop(settings, "engine_clamp_weights")
         box.label(text=("Imported networks map: bones -> first N bone "
                         "entries, curves/morphs -> first N enabled keys"),
@@ -251,21 +251,21 @@ class PSD_PT_engine(bpy.types.Panel):
 
         box = layout.box()
         box.label(text="Export", icon="EXPORT")
-        box.operator("psd.export_engine_nmn")
+        box.operator("bmd.export_engine_nmn")
         box.label(text=("Exports the trained Neural model as a global-mode "
                         ".nmn network (retrains on the engine input layout)"),
                   icon="INFO")
 
 
 classes = (
-    PSD_UL_bones,
-    PSD_UL_keys,
-    PSD_UL_clips,
-    PSD_PT_main,
-    PSD_PT_setup,
-    PSD_PT_inputs,
-    PSD_PT_training,
-    PSD_PT_model,
-    PSD_PT_preview,
-    PSD_PT_engine,
+    BMD_UL_bones,
+    BMD_UL_keys,
+    BMD_UL_clips,
+    BMD_PT_main,
+    BMD_PT_setup,
+    BMD_PT_inputs,
+    BMD_PT_training,
+    BMD_PT_model,
+    BMD_PT_preview,
+    BMD_PT_engine,
 )

@@ -1,4 +1,4 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 """Feed-forward neural network (MLP) with Adam, input standardization and

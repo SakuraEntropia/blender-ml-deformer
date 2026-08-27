@@ -1,4 +1,4 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 """Reader / writer / executor for the engine-side neural morph network
@@ -410,12 +410,12 @@ def run_nmn(model, x, clamp=True):
 
 
 # ---------------------------------------------------------------------------
-# Conversion to/from PoseDeformer's own regressor
+# Conversion to/from Blender ML Deformer's own regressor
 # ---------------------------------------------------------------------------
 
 def linear_sequence(hidden_sizes, weights, biases, activation="elu"):
     """Build a Sequence[Linear, ELU, ..., Linear, ELU] layer tree (the layout
-    the engine runtime itself produces for an MLP) from PoseDeformer-style
+    the engine runtime itself produces for an MLP) from Blender ML Deformer-style
     parameters.  weights/biases: lists of (out, in) / (out,) arrays."""
     children = []
     for k, (w, b) in enumerate(zip(weights, biases)):

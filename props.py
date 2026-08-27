@@ -1,7 +1,7 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
-"""Property groups for the PoseDeformer workspace (scene.psd)."""
+"""Property groups for the Blender ML Deformer workspace (scene.bmd)."""
 
 import bpy
 
@@ -14,7 +14,7 @@ def _poll_mesh(self, obj):
     return obj is not None and obj.type == "MESH"
 
 
-class PSD_BoneEntry(bpy.types.PropertyGroup):
+class BMD_BoneEntry(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Bone")
     use_rotation: bpy.props.BoolProperty(name="Use Rotation", default=True)
     use_rotation_x: bpy.props.BoolProperty(name="X", default=True)
@@ -31,12 +31,12 @@ class PSD_BoneEntry(bpy.types.PropertyGroup):
     use_scale: bpy.props.BoolProperty(name="Use Scale", default=False)
 
 
-class PSD_KeyEntry(bpy.types.PropertyGroup):
+class BMD_KeyEntry(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Shape Key")
     use: bpy.props.BoolProperty(name="Use", default=False)
 
 
-class PSD_TrainingClip(bpy.types.PropertyGroup):
+class BMD_TrainingClip(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Action")
     use: bpy.props.BoolProperty(name="Use", default=True)
     frame_start: bpy.props.IntProperty(name="Start", default=1, min=0)
@@ -44,7 +44,7 @@ class PSD_TrainingClip(bpy.types.PropertyGroup):
     num_frames: bpy.props.IntProperty(name="Frames", default=20, min=1, max=10000)
 
 
-class PSD_Settings(bpy.types.PropertyGroup):
+class BMD_Settings(bpy.types.PropertyGroup):
     # ---- Setup ----
     armature: bpy.props.PointerProperty(name="Armature", type=bpy.types.Object,
                                         poll=_poll_armature)
@@ -62,11 +62,11 @@ class PSD_Settings(bpy.types.PropertyGroup):
     )
 
     # ---- Inputs ----
-    bones: bpy.props.CollectionProperty(type=PSD_BoneEntry)
+    bones: bpy.props.CollectionProperty(type=BMD_BoneEntry)
     active_bone_index: bpy.props.IntProperty()
-    curve_inputs: bpy.props.CollectionProperty(type=PSD_KeyEntry)
+    curve_inputs: bpy.props.CollectionProperty(type=BMD_KeyEntry)
     active_curve_index: bpy.props.IntProperty()
-    morph_targets: bpy.props.CollectionProperty(type=PSD_KeyEntry)
+    morph_targets: bpy.props.CollectionProperty(type=BMD_KeyEntry)
     active_morph_index: bpy.props.IntProperty()
     input_rotation_weight: bpy.props.FloatProperty(
         name="Rotation Weight", default=1.0, min=0.0, max=100.0)
@@ -84,7 +84,7 @@ class PSD_Settings(bpy.types.PropertyGroup):
                                        description="0 = random every time")
     use_clip_sampling: bpy.props.BoolProperty(name="Sample From Actions",
                                               default=False)
-    training_clips: bpy.props.CollectionProperty(type=PSD_TrainingClip)
+    training_clips: bpy.props.CollectionProperty(type=BMD_TrainingClip)
     active_clip_index: bpy.props.IntProperty()
     morph_zero_prob: bpy.props.FloatProperty(
         name="Morph Zero Probability", default=0.3, min=0.0, max=1.0,
@@ -112,7 +112,7 @@ class PSD_Settings(bpy.types.PropertyGroup):
     num_bake_poses: bpy.props.IntProperty(name="Bake Poses", default=20,
                                           min=1, max=500)
     model_dir: bpy.props.StringProperty(name="Model Directory", subtype="DIR_PATH")
-    model_name: bpy.props.StringProperty(name="Model Name", default="posedeformer")
+    model_name: bpy.props.StringProperty(name="Model Name", default="blender_ml_deformer")
 
     # ---- Engine bridge ----
     engine_clamp_weights: bpy.props.BoolProperty(
@@ -129,17 +129,17 @@ class PSD_Settings(bpy.types.PropertyGroup):
 
 
 classes = (
-    PSD_BoneEntry,
-    PSD_KeyEntry,
-    PSD_TrainingClip,
-    PSD_Settings,
+    BMD_BoneEntry,
+    BMD_KeyEntry,
+    BMD_TrainingClip,
+    BMD_Settings,
 )
 
 
 def register():
     # property group classes are registered by the add-on __init__ loop
-    bpy.types.Scene.psd = bpy.props.PointerProperty(type=PSD_Settings)
+    bpy.types.Scene.bmd = bpy.props.PointerProperty(type=BMD_Settings)
 
 
 def unregister():
-    del bpy.types.Scene.psd
+    del bpy.types.Scene.bmd

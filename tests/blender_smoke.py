@@ -1,4 +1,4 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 """End-to-end smoke test that runs inside Blender (no window needed).
@@ -28,12 +28,12 @@ for p in (REPO_ROOT, ADDON_DIR):
 import bpy
 import numpy as np
 
-import posedeformer as psd
-from posedeformer import bridge
-from posedeformer import train
-from posedeformer import ue as ue_ops
-from posedeformer.core.ue_nmn import parse_nmn, run_nmn, build_ue_input
-from posedeformer.core.onnx_io import parse_onnx, run_onnx
+import blender_ml_deformer as bmd
+from blender_ml_deformer import bridge
+from blender_ml_deformer import train
+from blender_ml_deformer import ue as ue_ops
+from blender_ml_deformer.core.ue_nmn import parse_nmn, run_nmn, build_ue_input
+from blender_ml_deformer.core.onnx_io import parse_onnx, run_onnx
 
 FAILURES = []
 
@@ -103,15 +103,15 @@ def make_onnx_file(path, num_inputs, num_morphs):
 # ---------------------------------------------------------------------------
 
 try:
-    psd.register()
+    bmd.register()
     scene = bpy.context.scene
 
     for ob in list(scene.objects):
         bpy.data.objects.remove(ob, do_unlink=True)
 
     # armature: root -> child
-    arm_data = bpy.data.armatures.new("PSDArm")
-    arm = bpy.data.objects.new("PSDArm", arm_data)
+    arm_data = bpy.data.armatures.new("BMDArm")
+    arm = bpy.data.objects.new("BMDArm", arm_data)
     scene.collection.objects.link(arm)
     scene.view_layers[0].objects.active = arm
     bpy.ops.object.mode_set(mode="EDIT")
@@ -127,10 +127,10 @@ try:
     verts = [(x, y, 0.0) for y in range(4) for x in range(4)]
     faces = [(iy * 4 + ix, iy * 4 + ix + 1, (iy + 1) * 4 + ix + 1,
               (iy + 1) * 4 + ix) for iy in range(3) for ix in range(3)]
-    me = bpy.data.meshes.new("PSDMesh")
+    me = bpy.data.meshes.new("BMDMesh")
     me.from_pydata(verts, [], faces)
     me.update()
-    obj = bpy.data.objects.new("PSDMesh", me)
+    obj = bpy.data.objects.new("BMDMesh", me)
     scene.collection.objects.link(obj)
     mod = obj.modifiers.new("Armature", "ARMATURE")
     mod.object = arm
@@ -144,14 +144,14 @@ try:
     mk.data.update()
     me.update()
 
-    s = scene.psd
+    s = scene.bmd
     s.armature = arm
     s.mesh = obj
     s.num_random_poses = 16
     s.iterations = 400
     s.random_seed = 1234
 
-    bpy.ops.psd.sync_bones()
+    bpy.ops.bmd.sync_bones()
     check(len(s.bones) == 2, "sync_bones found 2 bones")
 
     # ---- linear model: generate -> train -> preview ----
@@ -164,13 +164,13 @@ try:
     print("    linear training loss: %.6f" % s.training_loss)
     check(s.training_loss < 0.01, "linear reproduces training data (mse < 0.01)")
 
-    bpy.ops.psd.create_preview_proxy()
+    bpy.ops.bmd.create_preview_proxy()
     check(s.preview_object is not None, "preview proxy created")
     base_proxy = np.array([v.co for v in s.preview_object.data.vertices])
 
     arm.pose.bones["child"].rotation_quaternion = (0.99875, 0.05, 0.0, 0.0)
     bpy.context.evaluated_depsgraph_get().update()
-    bpy.ops.psd.refresh_preview()
+    bpy.ops.bmd.refresh_preview()
     new_proxy = np.array([v.co for v in s.preview_object.data.vertices])
     check(not np.allclose(base_proxy, new_proxy), "proxy follows the pose")
     move = float(np.linalg.norm(new_proxy - base_proxy))
@@ -180,22 +180,22 @@ try:
     check(err_proxy < max(0.5, 0.3 * move), "proxy captures most of the deformation")
 
     # ---- own-format export / import ----
-    tmp = tempfile.mkdtemp(prefix="psd_smoke_")
+    tmp = tempfile.mkdtemp(prefix="bmd_smoke_")
     s.model_dir = tmp
     s.model_name = "smoke"
-    bpy.ops.psd.export_model()
+    bpy.ops.bmd.export_model()
     check(os.path.isfile(os.path.join(tmp, "pose_model.json")),
           "pose_model.json written")
     check(os.path.isfile(os.path.join(tmp, "pose_model.npz")),
           "pose_model.npz written")
     bridge.clear_runtime()
     s.is_trained = False
-    bpy.ops.psd.import_model()
+    bpy.ops.bmd.import_model()
     check(s.is_trained and bridge.ACTIVE_MODEL is not None, "own format re-imported")
 
     # ---- neural model: generate -> train -> export .nmn -> re-import ----
     s.model_kind = "NEURAL"
-    bpy.ops.psd.sync_morph_targets()
+    bpy.ops.bmd.sync_morph_targets()
     check(len(s.morph_targets) == 1, "one morph target listed")
     s.morph_targets[0].use = True
     consume(train.generate_training_data_iter(s))
@@ -207,7 +207,7 @@ try:
     nmn_path = os.path.join(tmp, "smoke.nmn")
     consume(ue_ops.export_nmn_iter(s, nmn_path))
     check(os.path.isfile(nmn_path), "engine network written (.nmn)")
-    check(os.path.isfile(os.path.join(tmp, "smoke.psd_ue.json")),
+    check(os.path.isfile(os.path.join(tmp, "smoke.bmd_ue.json")),
           "engine sidecar json written")
 
     # re-import the exported network through the engine path
@@ -231,7 +231,7 @@ try:
     # ---- bake with the imported engine network ----
     s.num_bake_poses = 4
     consume(train.bake_shape_keys_iter(s))
-    baked = bpy.data.objects.get("PSDMesh_PSDBaked")
+    baked = bpy.data.objects.get("BMDMesh_BMDBaked")
     check(baked is not None, "baked object created")
     if baked is not None:
         check(len(baked.data.shape_keys.key_blocks) == 5,
@@ -253,7 +253,7 @@ try:
           "onnx inference matches direct core execution")
 
     # ---- clear ----
-    bpy.ops.psd.clear()
+    bpy.ops.bmd.clear()
     check(s.preview_object is None, "clear removed preview pointer")
     check(bridge.ACTIVE_MODEL is None, "clear forgot the model")
 

@@ -2,6 +2,6 @@
 # the add-on's __init__.py; that file tolerates a missing bpy (only the
 # bpy-free `core` package is importable outside Blender), so the core tests
 # can run with plain Python:
-#     python3 -m pytest posedeformer/tests -q
+#     python3 -m pytest blender_ml_deformer/tests -q
 [tool.pytest.ini_options]
 python_files = "test_*.py"

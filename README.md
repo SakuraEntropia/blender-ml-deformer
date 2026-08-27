@@ -1,4 +1,4 @@
-# PoseDeformer
+# Blender ML Deformer
 
 一套**全新独立实现**的 Blender 姿态驱动网格形变工具：在 Blender 里生成训练数据、训练模型、视口预览形变、烘焙 Shape Keys，并可以**交换引擎格式的网络文件**。代码从头编写（MIT 许可），不包含任何第三方引擎源码，只按引擎运行时公开的文件布局做互操作。
 
@@ -46,7 +46,7 @@
 ### 导出 `.nmn`
 
 - 只对**本插件训练的 Neural 模型**开放。
-- 导出时会在同一份训练数据上按引擎输入布局（每骨骼 6 浮点 = 局部旋转矩阵前两列）**重新训练一个 ELU MLP**，然后写出 global 模式 `.nmn`（含输入均值/方差、内嵌字节码模型），并附一个 `*.psd_ue.json` 侧车文件记录骨骼/曲线/变形目标的名字映射。
+- 导出时会在同一份训练数据上按引擎输入布局（每骨骼 6 浮点 = 局部旋转矩阵前两列）**重新训练一个 ELU MLP**，然后写出 global 模式 `.nmn`（含输入均值/方差、内嵌字节码模型），并附一个 `*.bmd_ue.json` 侧车文件记录骨骼/曲线/变形目标的名字映射。
 - 引擎侧放置位置：项目 Intermediate 目录下的模型子目录（引擎编辑器按 `<Intermediate>/<ClassName>/<ClassName>.nmn` 查找），详见引擎的模型训练网络路径约定。
 
 ### 格式事实（互操作依据，均来自引擎运行时的公开行为）
@@ -73,19 +73,19 @@
 
 ```bash
 # 纯数学与格式层单测（系统 python，无需 Blender；含按格式规格手造的二进制参考字节验证）
-python3 -m pytest posedeformer/tests -q
+python3 -m pytest blender_ml_deformer/tests -q
 
 # Blender headless 端到端冒烟（含 .nmn 导出→重新导入→推理一致、ONNX 导入）
 /Applications/Blender.app/Contents/MacOS/Blender --background --factory-startup \
-    --python posedeformer/tests/blender_smoke.py
+    --python blender_ml_deformer/tests/blender_smoke.py
 ```
 
 ## 目录结构
 
 ```
-posedeformer/
+blender_ml_deformer/
 ├── __init__.py      # 注册入口（bpy 缺失时仅 core 可导入，便于测试）
-├── props.py         # scene.psd 属性组
+├── props.py         # scene.bmd 属性组
 ├── ops.py           # 操作符（模态进度）
 ├── ui.py            # N 面板
 ├── bridge.py        # bpy 侧运行时（姿态/网格求值、预览、烘焙、handlers）

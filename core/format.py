@@ -1,7 +1,7 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
-"""PoseDeformer's own model format: pose_model.json + pose_model.npz.
+"""Blender ML Deformer's own model format: pose_model.json + pose_model.npz.
 
 The JSON carries the feature spec, model kind, morph names and stats; the
 npz carries the numeric arrays (numpy ships with Blender; JSON would be far
@@ -45,7 +45,7 @@ def load_model(directory):
     weights_path = os.path.join(directory, WEIGHTS_NAME)
     if not os.path.isfile(info_path) or not os.path.isfile(weights_path):
         raise FileNotFoundError(
-            "No PoseDeformer model in %r (need %s + %s)"
+            "No Blender ML Deformer model in %r (need %s + %s)"
             % (directory, INFO_NAME, WEIGHTS_NAME))
     with open(info_path, "r", encoding="utf-8") as f:
         info = json.load(f)

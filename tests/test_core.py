@@ -1,9 +1,9 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 """Unit tests for the bpy-free core. Run with plain Python:
 
-    python3 -m pytest posedeformer/tests/test_core.py -q
+    python3 -m pytest blender_ml_deformer/tests/test_core.py -q
 """
 
 import sys

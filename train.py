@@ -1,4 +1,4 @@
-# Copyright (c) 2026 PoseDeformer contributors.
+# Copyright (c) 2026 Blender ML Deformer contributors.
 # Licensed under the MIT License. See LICENSE in the project root.
 
 """Training orchestration: data generation, model fitting, baking, and the
@@ -260,11 +260,11 @@ def bake_shape_keys_iter(settings):
     finally:
         src_eval.to_mesh_clear()
     if baked_me is None or len(baked_me.vertices) != len(base):
-        baked_me = bpy.data.meshes.new(mesh.name + "_PSDBaked")
+        baked_me = bpy.data.meshes.new(mesh.name + "_BMDBaked")
         baked_me.vertices.add(len(base))
     if baked_me.shape_keys is not None:
         bpy.data.shape_keys.remove(baked_me.shape_keys, do_unlink=True)
-    baked_me.name = mesh.name + "_PSDBaked"
+    baked_me.name = mesh.name + "_BMDBaked"
     baked_me.vertices.foreach_set("co", base.ravel())
     baked_obj = bpy.data.objects.new(baked_me.name, baked_me)
     bpy.context.scene.collection.objects.link(baked_obj)
@@ -296,11 +296,11 @@ def bake_shape_keys_iter(settings):
         out_dir = settings.model_dir or (os.path.dirname(bpy.data.filepath)
                                          if bpy.data.filepath else "")
         if out_dir:
-            path = os.path.join(out_dir, "PSD_pose_library.json")
+            path = os.path.join(out_dir, "BMD_pose_library.json")
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(library, f, indent=2)
         else:
-            print("[PoseDeformer] blend not saved and no Model Directory set; "
+            print("[Blender ML Deformer] blend not saved and no Model Directory set; "
                   "pose library not written")
     finally:
         bridge.restore_pose(armature, pose_snap)
