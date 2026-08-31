@@ -12,7 +12,7 @@
 |---|---|
 | Setup | 选择骨架/网格，选模型类型（Linear / Neural） |
 | Inputs | 骨骼列表（每骨骼三轴开关 + 训练旋转范围）、Shape Key 曲线输入、Morph Target |
-| Training | 随机姿态采样（种子可控）、动作帧采样（Start/End/Frames）、**姿态烘焙到时间轴**（每帧一个姿态 keyframe 到骨骼上，可直接回放/拖拽查看训练姿态）、Generate（模态进度，ESC 取消且恢复场景姿态） |
+| Training | **Generate Random Poses：直接往时间轴生成随机姿态**（rest 参考帧 + N 个随机姿态逐帧 keyframe，不跑网格求值）；随机姿态采样（种子可控）、动作帧采样（Start/End/Frames）、Generate Training Data（同步把训练姿态烘焙到时间轴）、模态进度 + ESC 恢复场景 |
 | Model | Linear：岭回归闭式解；Neural：MLP 预测 morph 权重（Adam、输入标准化、权重钳制、可配隐藏层/学习率/迭代数），训练后显示 Stats |
 | Preview & IO | 预览代理网格（自动刷新 + 手动）、一键烘焙相对 Shape Keys + 姿态库 JSON、自有格式导出/导入（`pose_model.json` + `pose_model.npz`） |
 | **Engine Bridge** | **导入引擎格式网络（`.nmn` / `.onnx`）在 Blender 里跑；把 Blender 训练的 Neural 模型导出成引擎 `.nmn` 网络** |

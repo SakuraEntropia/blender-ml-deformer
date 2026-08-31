@@ -215,6 +215,21 @@ class BMD_ProgressOperator(bpy.types.Operator):
 # Long operations
 # ---------------------------------------------------------------------------
 
+class BMD_OT_generate_random_poses(BMD_ProgressOperator):
+    bl_idname = "bmd.generate_random_poses"
+    bl_label = "Generate Random Poses"
+    bl_description = ("Sample random poses with the per-bone rotation ranges "
+                      "and keyframe them straight onto the timeline (no mesh "
+                      "evaluation, no training data)")
+
+    def _make_generator(self, context):
+        return train_ops.generate_random_poses_iter(context.scene.bmd)
+
+    def _on_done(self, context):
+        self.report({"INFO"}, "Keyframed %d random poses on the timeline"
+                    % context.scene.bmd.num_random_poses)
+
+
 class BMD_OT_generate_training_data(BMD_ProgressOperator):
     bl_idname = "bmd.generate_training_data"
     bl_label = "Generate Training Data"
@@ -423,6 +438,7 @@ classes = (
     BMD_OT_clip_add,
     BMD_OT_clip_add_all,
     BMD_OT_clip_remove,
+    BMD_OT_generate_random_poses,
     BMD_OT_generate_training_data,
     BMD_OT_train,
     BMD_OT_bake_shape_keys,

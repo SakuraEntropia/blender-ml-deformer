@@ -152,7 +152,9 @@ class BMD_PT_training(bpy.types.Panel):
         if settings.model_kind == "NEURAL":
             layout.prop(settings, "morph_zero_prob")
         layout.separator()
-        layout.operator("bmd.generate_training_data", icon="PLAY")
+        col = layout.column(align=True)
+        col.operator("bmd.generate_random_poses", icon="POSE_HLT")
+        col.operator("bmd.generate_training_data", icon="PLAY")
 
 
 class BMD_PT_model(bpy.types.Panel):

@@ -4,7 +4,7 @@
 bl_info = {
     "name": "Blender ML Deformer",
     "author": "Blender ML Deformer contributors",
-    "version": (0, 1, 1),
+    "version": (0, 1, 2),
     "blender": (4, 0, 0),
     "location": "3D Viewport > Sidebar (N) > Pose Deformer",
     "description": "Train pose-driven mesh deformation models inside Blender, "

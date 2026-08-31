@@ -61,6 +61,58 @@ def _keyframe_pose(action, armature, spec, frame):
         ad.action = prev_action
 
 
+def generate_random_poses_iter(settings):
+    """Sample random poses and keyframe them straight onto the timeline.
+
+    No mesh evaluation and no training cache involved — this is a quick way
+    to visualize the pose distribution the training will use.  Yields
+    progress 0..1.  Layout: rest reference pose at Start Frame, then N
+    random poses on the following frames."""
+    armature = settings.armature
+    if armature is None:
+        raise ValueError("Pick an Armature in the Setup section first")
+    spec = bridge.build_spec(settings)
+    if not spec.bones:
+        raise ValueError("No bones in Inputs; sync and enable bones first")
+    N = settings.num_random_poses
+    depsgraph = bridge.get_depsgraph()
+    rng = np.random.default_rng(settings.random_seed if settings.random_seed else None)
+    pose_snap = bridge.snapshot_pose(armature)
+    prev_action = armature.animation_data.action if armature.animation_data else None
+    action = prev_action
+    if action is None:
+        if armature.animation_data is None:
+            armature.animation_data_create()
+        action = bpy.data.actions.new(name="BMD_RandomPoses")
+    start = int(settings.timeline_start_frame)
+    try:
+        # detach any action so animation evaluation does not overwrite the
+        # poses we write
+        if armature.animation_data is not None:
+            armature.animation_data.action = None
+
+        # rest reference pose
+        bridge.write_pose(armature, spec, None, None, None)
+        depsgraph.update()
+        _keyframe_pose(action, armature, spec, start)
+
+        for i in range(N):
+            rotations, translations, scales = spec.sample_pose(
+                rng, bridge.rotation_ranges(settings))
+            bridge.write_pose(armature, spec, rotations, translations, scales)
+            depsgraph.update()
+            _keyframe_pose(action, armature, spec, start + 1 + i)
+            yield (i + 1) / N
+
+        armature.animation_data.action = action
+        bpy.context.scene.frame_current = start
+        depsgraph.update()
+        yield 1.0
+    finally:
+        bridge.restore_pose(armature, pose_snap)
+        depsgraph.update()
+
+
 def generate_training_data_iter(settings):
     """Sample poses, record deltas. Stores bridge.TRAINING_CACHE and updates
     stats. Yields progress 0..1.

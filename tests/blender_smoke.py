@@ -102,6 +102,19 @@ def make_onnx_file(path, num_inputs, num_morphs):
 
 # ---------------------------------------------------------------------------
 
+def _find_fcurve(act, data_path, index=0):
+    if hasattr(act, "fcurves"):  # pre-5.x actions
+        return act.fcurves.find(data_path, index=index)
+    for layer in act.layers:  # 5.x action layers
+        for strip in layer.strips:
+            bag = strip.channelbag(act.slots[0]) if act.slots else None
+            if bag is not None:
+                fc = bag.fcurves.find(data_path, index=index)
+                if fc is not None:
+                    return fc
+    return None
+
+
 try:
     bmd.register()
     scene = bpy.context.scene
@@ -164,20 +177,7 @@ try:
     check(act is not None and act.name == "BMD_TrainingPoses",
           "training poses baked to a timeline action")
     if act is not None:
-        fc = None
-        if hasattr(act, "fcurves"):  # pre-5.x actions
-            fc = act.fcurves.find('pose.bones["child"].location', index=0)
-        else:  # 5.x action layers
-            for layer in act.layers:
-                for strip in layer.strips:
-                    bag = strip.channelbag(act.slots[0]) if act.slots else None
-                    if bag is not None:
-                        fc = bag.fcurves.find('pose.bones["child"].location',
-                                              index=0)
-                    if fc is not None:
-                        break
-                if fc is not None:
-                    break
+        fc = _find_fcurve(act, 'pose.bones["child"].location')
         check(fc is not None and len(fc.keyframe_points) >= 2,
               "timeline keyframes written")
         if fc is not None and fc.keyframe_points:
@@ -280,6 +280,21 @@ try:
     w = run_onnx(graph, x, clamp_outputs=None)
     check(np.allclose(pred_bridge, morph_deltas @ np.clip(w, 0, 1), atol=1e-5),
           "onnx inference matches direct core execution")
+
+    # ---- dedicated random-pose timeline generation ----
+    s.num_random_poses = 8
+    consume(train.generate_random_poses_iter(s))
+    act = arm.animation_data.action if arm.animation_data else None
+    check(act is not None, "random-pose generation leaves an action assigned")
+    if act is not None:
+        fc = _find_fcurve(act, 'pose.bones["child"].location')
+        check(fc is not None, "random-pose keyframes written")
+        if fc is not None:
+            frames = [kp.co[0] for kp in fc.keyframe_points]
+            check(any(abs(f - 9.0) < 1e-6 for f in frames),
+                  "last random pose lands at Start Frame + N (9)")
+    check(abs(bpy.context.scene.frame_current - 1.0) < 1e-6,
+          "timeline parked at the start frame")
 
     # ---- clear ----
     bpy.ops.bmd.clear()
