@@ -12,7 +12,7 @@
 |---|---|
 | Setup | 选择骨架/网格，选模型类型（Linear / Neural） |
 | Inputs | 骨骼列表（每骨骼三轴开关 + 训练旋转范围）、Shape Key 曲线输入、Morph Target |
-| Training | 随机姿态采样（种子可控）、动作帧采样（Start/End/Frames）、Generate（模态进度，ESC 取消且恢复场景姿态） |
+| Training | 随机姿态采样（种子可控）、动作帧采样（Start/End/Frames）、**姿态烘焙到时间轴**（每帧一个姿态 keyframe 到骨骼上，可直接回放/拖拽查看训练姿态）、Generate（模态进度，ESC 取消且恢复场景姿态） |
 | Model | Linear：岭回归闭式解；Neural：MLP 预测 morph 权重（Adam、输入标准化、权重钳制、可配隐藏层/学习率/迭代数），训练后显示 Stats |
 | Preview & IO | 预览代理网格（自动刷新 + 手动）、一键烘焙相对 Shape Keys + 姿态库 JSON、自有格式导出/导入（`pose_model.json` + `pose_model.npz`） |
 | **Engine Bridge** | **导入引擎格式网络（`.nmn` / `.onnx`）在 Blender 里跑；把 Blender 训练的 Neural 模型导出成引擎 `.nmn` 网络** |
@@ -21,7 +21,7 @@
 
 1. **Setup**：选 Armature + Mesh，选模型类型。
 2. **Inputs**：Load Bones From Armature；需要曲线输入/变形目标时勾选对应 Shape Key。
-3. **Training**：设随机姿态数/种子 → Generate Training Data（或开启动作采样）。
+3. **Training**：设随机姿态数/种子 → Generate Training Data（或开启动作采样）。生成的每个姿态会按顺序 keyframe 到骨架时间轴（Bake Poses To Timeline，默认开启，Start Frame 可调；生成结束时间轴停在起始帧，直接空格播放即可回看训练姿态）。
 4. **Model**：调参 → Train。
 5. **Preview & IO**：Create Preview Proxy（摆姿态自动跟随）；Bake Shape Keys 输出烘焙对象；Export/Import Model 存自有格式。
 

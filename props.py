@@ -82,6 +82,13 @@ class BMD_Settings(bpy.types.PropertyGroup):
                                             min=1, max=10000)
     random_seed: bpy.props.IntProperty(name="Seed", default=0, min=0,
                                        description="0 = random every time")
+    bake_poses_to_timeline: bpy.props.BoolProperty(
+        name="Bake Poses To Timeline", default=True,
+        description="Keyframe every generated training pose on the armature "
+                    "timeline (one pose per frame, starting at Start Frame)")
+    timeline_start_frame: bpy.props.IntProperty(
+        name="Start Frame", default=1, min=0,
+        description="First timeline frame used for the baked training poses")
     use_clip_sampling: bpy.props.BoolProperty(name="Sample From Actions",
                                               default=False)
     training_clips: bpy.props.CollectionProperty(type=BMD_TrainingClip)

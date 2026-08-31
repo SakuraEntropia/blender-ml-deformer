@@ -158,6 +158,34 @@ try:
     s.model_kind = "LINEAR"
     consume(train.generate_training_data_iter(s))
     check(s.num_training_frames == 17, "generated 16 random + 1 reference frame")
+
+    # timeline baking: poses must be keyframed on the armature action
+    act = arm.animation_data.action if arm.animation_data else None
+    check(act is not None and act.name == "BMD_TrainingPoses",
+          "training poses baked to a timeline action")
+    if act is not None:
+        fc = None
+        if hasattr(act, "fcurves"):  # pre-5.x actions
+            fc = act.fcurves.find('pose.bones["child"].location', index=0)
+        else:  # 5.x action layers
+            for layer in act.layers:
+                for strip in layer.strips:
+                    bag = strip.channelbag(act.slots[0]) if act.slots else None
+                    if bag is not None:
+                        fc = bag.fcurves.find('pose.bones["child"].location',
+                                              index=0)
+                    if fc is not None:
+                        break
+                if fc is not None:
+                    break
+        check(fc is not None and len(fc.keyframe_points) >= 2,
+              "timeline keyframes written")
+        if fc is not None and fc.keyframe_points:
+            check(abs(fc.keyframe_points[0].co[0] - 1.0) < 1e-6,
+                  "keyframes start at Start Frame (1)")
+    check(abs(bpy.context.scene.frame_current - 1.0) < 1e-6,
+          "timeline moved to the start frame after generation")
+
     consume(train.train_model_iter(s))
     check(s.is_trained, "linear model trained")
     check(np.isfinite(s.training_loss), "loss is finite")
@@ -168,8 +196,9 @@ try:
     check(s.preview_object is not None, "preview proxy created")
     base_proxy = np.array([v.co for v in s.preview_object.data.vertices])
 
-    arm.pose.bones["child"].rotation_quaternion = (0.99875, 0.05, 0.0, 0.0)
-    bpy.context.evaluated_depsgraph_get().update()
+    # the armature is now driven by the baked timeline action; scrub to the
+    # first random training pose (frame 2) instead of posing manually
+    bpy.context.scene.frame_set(2)
     bpy.ops.bmd.refresh_preview()
     new_proxy = np.array([v.co for v in s.preview_object.data.vertices])
     check(not np.allclose(base_proxy, new_proxy), "proxy follows the pose")

@@ -129,6 +129,9 @@ class BMD_PT_training(bpy.types.Panel):
         col = layout.column(align=True)
         col.prop(settings, "num_random_poses")
         col.prop(settings, "random_seed")
+        layout.prop(settings, "bake_poses_to_timeline")
+        if settings.bake_poses_to_timeline:
+            layout.prop(settings, "timeline_start_frame")
         layout.prop(settings, "use_clip_sampling")
         if settings.use_clip_sampling:
             box = layout.box()

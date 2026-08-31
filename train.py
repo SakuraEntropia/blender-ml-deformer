@@ -29,9 +29,44 @@ def _sample_morph_weights(rng, n, zero_prob):
     return w
 
 
+def _keyframe_pose(action, armature, spec, frame):
+    """Keyframe the current pose of the spec bones into ``action`` at
+    ``frame`` using Blender's own keyframe_insert (the action is temporarily
+    assigned so the keys land in the right action even while sampling clips;
+    no depsgraph update happens in between, so pose channels stay valid)."""
+    ad = armature.animation_data
+    if ad is None:
+        armature.animation_data_create()
+        ad = armature.animation_data
+    prev_action = ad.action
+    ad.action = action
+    try:
+        pose_bones = armature.pose.bones
+        for bone in spec.bones:
+            pb = pose_bones.get(bone.name)
+            if pb is None:
+                continue
+            pb.keyframe_insert("location", frame=frame, group=bone.name)
+            if pb.rotation_mode == "QUATERNION":
+                pb.keyframe_insert("rotation_quaternion", frame=frame,
+                                   group=bone.name)
+            elif pb.rotation_mode == "AXIS_ANGLE":
+                pb.keyframe_insert("rotation_axis_angle", frame=frame,
+                                   group=bone.name)
+            else:
+                pb.keyframe_insert("rotation_euler", frame=frame,
+                                   group=bone.name)
+            pb.keyframe_insert("scale", frame=frame, group=bone.name)
+    finally:
+        ad.action = prev_action
+
+
 def generate_training_data_iter(settings):
     """Sample poses, record deltas. Stores bridge.TRAINING_CACHE and updates
-    stats. Yields progress 0..1."""
+    stats. Yields progress 0..1.
+
+    With "Bake Poses To Timeline" enabled, every sampled pose is keyframed on
+    the armature timeline (one pose per frame, starting at Start Frame)."""
     armature = settings.armature
     mesh = settings.mesh
     if armature is None or mesh is None:
@@ -65,8 +100,23 @@ def generate_training_data_iter(settings):
 
     pose_snap = bridge.snapshot_pose(armature)
     key_snap = bridge.snapshot_keys(mesh)
+    prev_action = armature.animation_data.action if armature.animation_data else None
+    timeline_action = None
+    timeline_frame = int(settings.timeline_start_frame)
+    if settings.bake_poses_to_timeline:
+        if armature.animation_data is None:
+            armature.animation_data_create()
+        timeline_action = prev_action
+        if timeline_action is None:
+            timeline_action = bpy.data.actions.new(name="BMD_TrainingPoses")
     frame = 0
     try:
+        # detach any action while sampling so animation evaluation does not
+        # overwrite the poses we write (clip sampling re-attaches its own
+        # actions below)
+        if armature.animation_data is not None:
+            armature.animation_data.action = None
+
         # reference pose: zero input -> zero deltas
         X[:, frame] = spec.build_vector(np.zeros((len(spec.bones), 3)),
                                         np.zeros((len(spec.bones), 3)),
@@ -75,6 +125,11 @@ def generate_training_data_iter(settings):
         D[:, frame] = 0.0
         if Y is not None:
             Y[:, frame] = 0.0
+        if timeline_action is not None:
+            bridge.write_pose(armature, spec, None, None, None)
+            depsgraph.update()
+            _keyframe_pose(timeline_action, armature, spec,
+                           timeline_frame + frame)
         frame += 1
 
         def _record():
@@ -90,6 +145,9 @@ def generate_training_data_iter(settings):
                 bridge.set_key_values(mesh, morph_names, w)
                 Y[:, frame] = w
             depsgraph.update()
+            if timeline_action is not None:
+                _keyframe_pose(timeline_action, armature, spec,
+                               timeline_frame + frame)
             pos = bridge.eval_positions(mesh, depsgraph)
             if pos.shape[0] != V:
                 raise ValueError(
@@ -139,6 +197,9 @@ def generate_training_data_iter(settings):
                             bridge.set_key_values(mesh, morph_names, w)
                             Y[:, frame] = w
                         depsgraph.update()
+                        if timeline_action is not None:
+                            _keyframe_pose(timeline_action, armature, spec,
+                                           timeline_frame + frame)
                         pos = bridge.eval_positions(mesh, depsgraph)
                         if pos.shape[0] != V:
                             raise ValueError(
@@ -158,6 +219,15 @@ def generate_training_data_iter(settings):
                     armature.animation_data.action = prev_action
                 scene.frame_set(prev_frame)
                 depsgraph.update()
+
+        if timeline_action is not None:
+            # leave the armature on the baked timeline so the poses can be
+            # scrubbed / played back
+            armature.animation_data.action = timeline_action
+            bpy.context.scene.frame_current = timeline_frame
+        elif prev_action is not None:
+            armature.animation_data.action = prev_action
+        depsgraph.update()
 
         bridge.TRAINING_CACHE = {
             "X": X[:, :frame],
